@@ -79,6 +79,7 @@ WORK="$TMPDIR/flac2mp3.$$"
 ERR="$WORK/stderr.txt"
 WAV="$WORK/track.wav"
 TAGS="$WORK/track.tags"
+COVER="$WORK/track.jpg"
 
 # Create output-dir if it does not exist
 if [ ! -d $OUTPUTDIR ]; then
@@ -157,6 +158,9 @@ find . -type f -name '*.flac' -print \
     source "$TAGS"
     echo "$ARTIST / $ALBUM ($DATE) / $TRACKNUMBER - $TITLE"
 
+    # Get cover
+    $METAFLAC --export-picture-to="$COVER" "$filepath.flac" 2>/dev/null
+
     # Decode FLAC (loop until success or MAXFAILS reached)
     attempt=0
     success=0
@@ -181,14 +185,15 @@ find . -type f -name '*.flac' -print \
     fi
 
     # Encode MP3
+    [ -s "$COVER" ] && IMAGEOPT=(--ti "$COVER") || IMAGEOPT=()
     $LAME $LAME_OPTS --tt "$TITLE" --ta "$ARTIST" --tl "$ALBUM" \
-        --tn "$TRACKNUMBER" --tg "$GENRE" --ty "$DATE" \
+        --tn "$TRACKNUMBER" --tg "$GENRE" --ty "$DATE" ${IMAGEOPT[@]} \
         "$WAV" "$OUTPUTDIR/$filepath.mp3"
     if (( $? )); then
       echo ""
       echo "Encode failed, retrying sans genre"
       $LAME $LAME_OPTS --tt "$TITLE" --ta "$ARTIST" --tl "$ALBUM" \
-          --tn "$TRACKNUMBER" --ty "$DATE" \
+          --tn "$TRACKNUMBER" --ty "$DATE" ${IMAGEOPT[@]} \
           "$WAV" "$OUTPUTDIR/$filepath.mp3"
       if (( $? )); then
         echo ""
@@ -198,6 +203,9 @@ find . -type f -name '*.flac' -print \
     fi
     echo ""
     echo ""
+
+    # Remove cover file
+    rm -f "$COVER"
 
     # Remove the lock file
     if [ -x "$DOTLOCKFILE" ]; then
