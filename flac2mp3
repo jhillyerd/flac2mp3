@@ -75,7 +75,8 @@ else
   fi
 fi
 
-WORK="$TMPDIR/flac2mp3.$$"
+# Setup work directory
+WORK="$(mktemp -d $TMPDIR/flac2mp3.XXXXXX)" || exit 1
 ERR="$WORK/stderr.txt"
 WAV="$WORK/track.wav"
 TAGS="$WORK/track.tags"
@@ -92,18 +93,6 @@ INPUTDIR="$PWD"
 cd "$OLDPWD"
 cd "$OUTPUTDIR"
 OUTPUTDIR="$PWD"
-
-# Setup work directory
-rm -rf "$WORK"
-if [ -e "$WORK" ]; then
-  echo "Couldn't delete $WORK"
-  exit 1
-fi
-mkdir "$WORK"
-if [ ! -d "$WORK" ]; then
-  echo "Couldn't create $WORK"
-  exit 1
-fi
 
 # Get input file list
 cd "$INPUTDIR"
